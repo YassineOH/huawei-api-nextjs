@@ -12,8 +12,8 @@ export default async function loginToCloud(
   const response = await axios.post(
     "https://eu5.fusionsolar.huawei.com/thirdData/login",
     {
-      userName: "test_api_2",
-      systemCode: "Eone1234",
+      userName: process.env.USER_NAME,
+      systemCode: process.env.PASSWORD,
     }
   );
 

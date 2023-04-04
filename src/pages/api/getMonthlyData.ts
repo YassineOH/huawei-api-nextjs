@@ -1,6 +1,13 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import axios from "axios";
 
+export interface Response {
+  use_power: number | null;
+  inverter_power: number | null;
+  ongrid_power: number | null;
+  month: number;
+}
+
 export interface Root {
   data: PlantData[];
   failCode: number;
@@ -17,16 +24,16 @@ export interface PlantData {
 
 export interface DataItemMap {
   radiation_intensity: any;
-  installed_capacity: number;
-  use_power: number;
-  inverter_power: number;
+  installed_capacity: number | null;
+  use_power: number | null;
+  inverter_power: number | null;
   reduction_total_tree: any;
-  power_profit: number;
+  power_profit: number | null;
   theory_power: any;
-  reduction_total_coal: number;
-  perpower_ratio: number;
-  reduction_total_co2: number;
-  ongrid_power: number;
+  reduction_total_coal: number | null;
+  perpower_ratio: number | null;
+  reduction_total_co2: number | null;
+  ongrid_power: number | null;
   performance_ratio: any;
 }
 
@@ -38,11 +45,10 @@ export interface Params {
 
 export default async function getMonthlyData(
   req: NextApiRequest,
-  res: NextApiResponse<PlantData>
+  res: NextApiResponse<Response[]>
 ) {
   const token = req.body.token as string;
   const plantId = req.body.plantId as string;
-  const month = req.body.month as number;
   try {
     const response = await axios.post<Root>(
       "https://eu5.fusionsolar.huawei.com/thirdData/getKpiStationMonth",
@@ -57,14 +63,14 @@ export default async function getMonthlyData(
       }
     );
 
-    const monthlyData = response.data.data;
+    const newData = response.data.data.map((month) => ({
+      use_power: month.dataItemMap.use_power,
+      inverter_power: month.dataItemMap.inverter_power,
+      ongrid_power: month.dataItemMap.ongrid_power,
+      month: new Date(month.collectTime).getMonth(),
+    }));
 
-    const monthData =
-      monthlyData.find(
-        (data) => new Date(data.collectTime).getMonth() === month
-      ) || monthlyData[0];
-
-    res.status(200).json({ ...monthData });
+    res.status(200).json(newData);
   } catch (error) {
     console.log(error);
   }

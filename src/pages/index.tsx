@@ -1,19 +1,9 @@
 import Head from "next/head";
-import axios from "axios";
 import { useMutation, useQuery } from "@tanstack/react-query";
 
-import type { Data as PlantsResponse } from "./api/getPlants";
 import Plant from "~/components/Plant";
 
-type TokenResponse = {
-  token: string;
-};
-
-const login = () => axios.get<TokenResponse>("/api/login");
-const getPlants = (token: string) =>
-  axios.post<PlantsResponse>("/api/getPlants", {
-    token,
-  });
+import { login, getPlants } from "~/services/axios";
 
 export default function Home() {
   const {

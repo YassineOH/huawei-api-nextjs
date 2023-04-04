@@ -1,29 +1,14 @@
-import { FormEvent, useState } from "react";
+import { FormEvent, useState, useMemo } from "react";
 import { useMutation } from "@tanstack/react-query";
-import axios from "axios";
+
+import { getMonthlyData } from "~/services/axios";
 
 import type { List } from "~/pages/api/getPlants";
-import type { PlantData } from "~/pages/api/getMonthlyData";
 import ShowInfo from "./ShowInfo";
 
 interface IProps extends List {
   token: string;
 }
-
-const getMonthlyData = ({
-  token,
-  plantId,
-  month,
-}: {
-  token: string;
-  plantId: string;
-  month: number;
-}) =>
-  axios.post<PlantData>("/api/getMonthlyData", {
-    token,
-    month,
-    plantId,
-  });
 
 function Plant({
   capacity,
@@ -33,16 +18,26 @@ function Plant({
   token,
 }: IProps) {
   const [month, setMonth] = useState<null | number>(null);
+  const [showLess, setShowLess] = useState(false);
   const {
     mutate: loadMonthlyData,
     data,
-    isSuccess,
+    isLoading,
   } = useMutation(getMonthlyData, {
     onError(error) {
       console.log(error);
     },
-    onSuccess(data) {},
+    onSuccess(data) {
+      console.log(data);
+    },
   });
+
+  const selectedMonth = useMemo(() => {
+    if (data) {
+      return data.data.find((d) => d.month === month);
+    }
+    null;
+  }, [data, month]);
 
   const handleChange = (e: FormEvent) => {
     setMonth(+(e.target as HTMLSelectElement).value);
@@ -62,13 +57,13 @@ function Plant({
             type='button'
             className='cursor-pointer rounded-md border border-teal-900 bg-teal-900 px-4 py-2 text-white disabled:cursor-not-allowed disabled:border-none disabled:bg-gray-500'
             disabled={month === null ? true : false}
-            onClick={() =>
+            onClick={() => {
               loadMonthlyData({
                 token,
                 plantId: plantCode,
-                month: month || 0,
-              })
-            }
+              });
+              setShowLess(false);
+            }}
           >
             more
           </button>
@@ -85,11 +80,20 @@ function Plant({
             <option value='0'>January</option>
             <option value='1'>February</option>
             <option value='2'>Mars</option>
+            <option value='3'>April</option>
           </select>
         </div>
       </div>
 
-      {isSuccess && <ShowInfo {...data.data} />}
+      {selectedMonth && !showLess && (
+        <>
+          <ShowInfo {...selectedMonth} />
+          <button onClick={() => setShowLess(true)} className='text-teal-800'>
+            {" "}
+            show less
+          </button>
+        </>
+      )}
     </section>
   );
 }
